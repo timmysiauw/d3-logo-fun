@@ -6,4 +6,4 @@ An exercise to get used to [D3](d3js.org) and its [force layout](https://github.
 
 ## Live
 
-Check out the [live version](www.timmysiauw.github.io/d3-logo-fun).
+Check out the [live version](http://timmysiauw.github.io/d3-logo-fun/).
