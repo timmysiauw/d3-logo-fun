@@ -1,1 +1,204 @@
-My Page
+<!DOCTYPE html>
+<html>
+<head>
+	<title>D3, Grids, Color</title>
+	<script src = "io-grid.js"></script>
+	<script src = "D3Logo.js"></script>
+	<script src = "d3.min.js"></script>
+	<script src = "jetcolors.js"></script>
+	<style>
+		circle {
+  			stroke: #000;
+		};
+        body {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 24px;
+            margin: 0px;
+            padding: 0px;
+        }
+        a {
+            color: black;
+        }
+        a:visited {
+            color: black;
+        }
+        #banner {
+            position:absolute;
+            width:100%; 
+            z-index: 10
+        }
+        #banner p {
+            text-align:center; 
+            font-family: 'Open Sans', sans-serif;
+            font-size: 24px;
+            color:#000000
+        }
+        #about {
+            position:absolute; 
+            width:30%; 
+            z-index:10; 
+            margin-left:20px
+        }
+        #about p {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 18px;
+            color: #000000;
+        }
+        #about-toggle {
+            font-size: 18px;
+        }
+        #about-toggle:hover {
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        #about-toggle.active {
+            text-decoration: underline;
+        }
+        #about-body {
+            display: none
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id = "banner">
+        <p> Move the mouse.</p>
+    </div>
+
+    <div id = "about">
+        <p id = "about-toggle">About</p>
+
+        <div id = "about-body">
+            <p> This is a personal project getting to know <a href = "d3js.org">D3</a>'s <a href = "">force layout</a> and using some personal libraries - <a href = "">io-grid</a> and <a href = "">jet-color</a>.</p>
+            <p> D3's force layout doesn't seem to have a native way of recording velocities, which I bind to the color of each node, so I recorded that myself within each force tick. This augmentation is clearly marked in the code. </p>
+            <p> Although this example looks a lot like <a href = "">this</a>, their implementation is actually quite different. Specifically in the use of <a href = "">links</a>. </p>
+            <p> You can download all this on <a href = "">GitHub</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("about-toggle").addEventListener("click", function(event) {
+            if (this.className === "active") {
+                this.className = "";
+                document.getElementById("about-body").style.display = "none";
+            }
+            else {
+                this.className = "active";
+                document.getElementById("about-body").style.display = "block"
+            }
+            
+        });
+    </script>
+
+	<script>
+
+		var w = 400, // logo was defined in a 400wx300h area. don't change this.
+    		h = 300,
+
+    		dx = 10, // discretization of nodes
+    		dy = 10,  
+    		
+    		r = 4, // node radius
+
+    		satv = 15, // node velocity at which color saturates
+    		mousecharge = -2000, // charge of mouse node (negative = repulsion)
+    		normalcharge = 0; // charge between nodes
+
+    	var grid = new Grid({x0: 0, xf:w, dx: dx, y0: 0, yf: h, dy: dy}); // create a grid that spans logo
+
+    	var points = grid.pointsInPoly(logo.D).concat(grid.pointsInPoly(logo.three)); // get points that are contained in D3 logo contours (see D3Logo.js)
+
+    	var nodes = [{x: -1000, y: -1000, radius: 0}]; // first node is for following the mouse pointer. initialized to "far away"
+    	var links = [];
+
+        var W = window.innerWidth, // we want the D3 svg to take up the whole screen
+            H = window.innerHeight;
+
+        var offsetW = (W - w)/2, // so we have to figure how much to offset the 400x300 area to center it
+            offsetH = (H - h)/2; // center vertically also
+
+    	for (var i=0; i<points.length; i++) {
+    		nodes.push({ // push a node that is not fixed
+    			x: W*Math.random(), // randomly select its initial location
+    			y: H*Math.random(),
+    			prevx: 0, // position of node during previous force "tick"
+    			prevy: 0, // initialized to 0
+    			v: 0, // velocity of node, initialized to 0
+    			radius: r,
+    			fixed: false
+    		});
+    		nodes.push({ // every moving node has a twin that is fixed to the position the moving node is attracted to
+    			x: points[i].x + offsetW, // offset location so that D3 logo is centered in D3 svg
+    			y: points[i].y + offsetH,
+    			radius: 0, // fixed nodes are invisible
+    			fixed: true // fixed nodes are fixed
+    		});
+    		links.push({
+    			source: 2*i+1, // accounts for 0th node being reserved for mouse position, this creates a link between node twins
+    			target: 2*(i+1)
+    		});
+    	}
+
+    	// append our D3 svg
+    	var svg = d3.select("body").append("svg:svg").attr("width", W).attr("height", H);
+
+    	// initialize drawing all our nodes into the main svg
+    	svg.selectAll("circle").data(nodes).enter().append("svg:circle")
+    		.attr("cx", function(node) {return node.x})
+    		.attr("cy", function(node) {return node.y})
+    		.attr("r", function(node) {return node.radius})
+
+    	// define our force layout
+    	var force = d3.layout.force()
+        	.gravity(0)
+        	.charge(function(d, i) {return i === 0 ? mousecharge : normalcharge}) // only the node where the mouse position is has a (repulsive) force
+        	.nodes(nodes)
+        	.links(links)
+        	.linkDistance(0) // resting link distance is 0
+        	.size([W, H]);
+
+    	force.on("tick", function(e) {
+			
+			// update velocity and prevx/y of non-fixed nodes
+			for (var i=0; i<nodes.length; i++) {
+				if (!nodes[i].fixed) {
+					nodes[i].v = Math.sqrt((nodes[i].x - nodes[i].prevx)*(nodes[i].x - nodes[i].prevx)+(nodes[i].y - nodes[i].prevy)*(nodes[i].y - nodes[i].prevy)); // this could be shortened using Math.pow(), but I'm afraid it uses some kind of Taylor series. For simple powers, e.g. 2, multiplication is probably faster. 
+					nodes[i].prevx = nodes[i].x;
+					nodes[i].prevy = nodes[i].y;
+				}
+			}
+
+			// update all circles
+        	svg.selectAll("circle")
+            	.attr("cx", function(d) {return d.x})
+            	.attr("cy", function(d) {return d.y})
+            	.style("fill", function(d, i) {
+            		// get index of color value (0 - 255)
+            		var ind = d.v >= satv ? 255 : Math.floor(255*d.v/satv);
+
+            		// get JET color value for index (see jetcolors.js)
+            		return d3.rgb(JET.hex[ind])
+            	});
+    	});
+
+   		force.start();
+
+   		svg.on("mousemove", function() {
+        	var p = d3.mouse(this);
+        	nodes[0].x = p[0];
+        	nodes[0].y = p[1];
+        	force.resume();
+    	});
+
+    	/*svg.on("touchmove", function() {
+        	var p = d3.touch(this);
+        	nodes[0].x = p[0];
+        	nodes[0].y = p[1];
+        	force.resume();
+    	});*/
+
+	</script>
+</body>
+
+</html>
