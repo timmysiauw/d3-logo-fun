@@ -2,7 +2,7 @@
 
 ## Description 
 
-An exercise to get used to [D3](d3js.org) and its [force layout](https://github.com/mbostock/d3/wiki/Force-Layout). 
+An exercise to get used to [D3](http://d3js.org/) and its [force layout](https://github.com/mbostock/d3/wiki/Force-Layout). 
 
 ## Live
 
