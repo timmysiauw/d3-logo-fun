@@ -1,5 +1,5 @@
 var JET = (function() {
-	// approximation source: http://stackoverflow.com/questions/7706339/grayscale-to-red-green-blue-matlab-jet-color-scale
+	// source: http://stackoverflow.com/questions/7706339/grayscale-to-red-green-blue-matlab-jet-color-scale
 
 	function componentToHex(c) {
 		var hex = c.toString(16);
@@ -14,18 +14,12 @@ var JET = (function() {
 		r: new Uint8Array(256),
 		g: new Uint8Array(256),
 		b: new Uint8Array(256),
-		hex: [],
-	};
+		hex: []
+	}
 
-	/*var R = new Uint8Array(256),
-		G = new Uint8Array(256),
-		B = new Uint8Array(256),
-		H = [];*/
-
-	//var r, g, b;
+	var r, g, b;
 	for (var i=0; i<256; i++) {
 
-		/*
 		r = Math.min(255, 4*(i-96), 255 - 4*(i-224));
 		r = r < 0 ? 0 : r;
 
@@ -34,27 +28,19 @@ var JET = (function() {
 
 		b = Math.min(255, 4*i + 127, 255 - 4*(i-96));
 		b = b < 0 ? 0 : b;
-
-		R[i] = r;
-		G[i] = g;
-		B[i] = b;
-
-		H.push(rgbToHex(r,g,b));*/
-
-		colors.r[i] = Math.min(255, 4*(i-96), 255 - 4*(i-224));
-		colors.r[i] = colors.r[i] < 0 ? 0 : colors.r[i];
-
-		colors.g[i] = Math.min(255, 4*(i-96), 255 - 4*(i-224));
-		colors.g[i] = colors.g[i] < 0 ? 0 : colors.g[i];
-
-		colors.b[i] = Math.min(255, 4*(i-96), 255 - 4*(i-224));
-		colors.b[i] = colors.b[i] < 0 ? 0 : colors.b[i];
-
-		colors.hex.push(rgbToHex(colors.r[i],colors.g[i],colors.b[i]));
-
+		
+		colors.r[i] = r;
+		colors.g[i] = g;
+		colors.b[i] = b;
+		colors.hex.push(rgbToHex(r,g,b));
 	}
 
-	//return {r: R, g: G, b: B, hex: H};
+	colors.index = function(min, max, value) {
+		if (value > max) return 255;
+		else if (value < 0) return 0;
+		else return Math.floor(256*(value - min)/(max-min));
+	}
+
 	return colors;
 
 })();
